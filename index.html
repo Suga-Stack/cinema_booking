@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="UTF-8">
+    <title>电影院选座系统</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #f5f5f5; }
+        #cinema-canvas { background: #222; display: block; margin: 30px auto; border-radius: 10px; box-shadow: 0 2px 12px #888; }
+        .controls { width: 1200px; margin: 0 auto 20px auto; display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+        .controls label { margin-right: 5px; }
+        .controls input, .controls select, .controls button { margin-right: 10px; }
+        .legend { width: 1200px; margin: 0 auto 10px auto; display: flex; gap: 20px; }
+        .legend span { display: flex; align-items: center; gap: 5px; }
+        .legend-box { width: 20px; height: 20px; display: inline-block; border: 1px solid #888; }
+    </style>
+</head>
+<body>
+    <h2 style="text-align:center;">电影院选座系统（矩形座位）</h2>
+    <form onsubmit="return false;">
+    <fieldset style="margin:0 auto 10px auto;width:1200px;padding:10px 20px 10px 20px;">
+        <legend style="font-weight:bold;">参数配置</legend>
+        <div class="controls" style="width:1200px;">
+            <label for="hallSize">放映厅规模：</label>
+            <select id="hallSize" onchange="changeHall()">
+                <option value="100">100人</option>
+                <option value="200" selected>200人</option>
+                <option value="300">300人</option>
+            </select>
+            <label for="ticketType">票型：</label>
+            <select id="ticketType" onchange="switchTicketType()">
+                <option value="single">个人票</option>
+                <option value="group">团体票</option>
+            </select>
+            <span id="singleInputs">
+                <label for="singleName">姓名：</label><input type="text" id="singleName" style="width:70px;">
+                <label for="singleAge">年龄：</label><input type="number" id="singleAge" min="1" max="120" value="25" style="width:60px;">
+                <button type="button" onclick="autoSelectSeat()">自动选座</button>
+            </span>
+            <span id="groupInputs" style="display:none;">
+                <label for="groupCount">人数：</label><input type="number" id="groupCount" min="2" max="20" value="2" style="width:50px;">
+                <label for="groupNames">成员姓名（逗号分隔）：</label><input type="text" id="groupNames" placeholder="如：张三,李四" style="width:120px;">
+                <label for="groupAges">成员年龄（逗号分隔）：</label><input type="text" id="groupAges" placeholder="如：25,30,65" style="width:120px;">
+                <button type="button" onclick="autoSelectGroup()">团体自动选座</button>
+            </span>
+            <button type="button" onclick="bookSeats()">预订</button>
+            <button type="button" onclick="cancelBooking()">取消预订</button>
+            <button type="button" onclick="buySeats()">购票</button>
+            <button type="button" onclick="refundSeats()">退票</button>
+        </div>
+    </fieldset>
+    </form>
+    <div class="legend" style="width:1200px;">
+        <span><span class="legend-box" style="background:green;"></span>空座</span>
+        <span><span class="legend-box" style="background:yellow;"></span>选中未售</span>
+        <span><span class="legend-box" style="background:red;"></span>已售</span>
+        <span><span class="legend-box" style="background:orange;"></span>预订</span>
+    </div>
+    <canvas id="cinema-canvas" width="1200" height="800"></canvas>
+    <script>
+// 静态配置不同放映厅规模
+const HALL_CONFIG = {
+    100: {rows: 10, cols: 10},
+    200: {rows: 10, cols: 20},
+    300: {rows: 15, cols: 20}
+};
+let currentHall = 200;
+let ROWS = HALL_CONFIG[currentHall].rows, COLS = HALL_CONFIG[currentHall].cols;
+const SEAT_RADIUS = 18, SEAT_GAP = 8;
+const canvas = document.getElementById('cinema-canvas');
+const ctx = canvas.getContext('2d');
+
+// 座位状态：0-空座，1-已售，2-选中，3-预订
+let seats = Array.from({length: ROWS}, (_, r) => Array.from({length: COLS}, (_, c) => ({
+    status: 0, // 0空 1已售 2选中 3预订
+    row: r, col: c, 
+    number: r*COLS + c + 1,
+    name: '', // 购票人姓名
+    age: null // 购票人年龄
+})));
+let selected = [];
+
+function initSeats() {
+    seats = Array.from({length: ROWS}, (_, r) => Array.from({length: COLS}, (_, c) => ({
+        status: 0,
+        row: r, col: c,
+        number: r*COLS + c + 1,
+        name: '',
+        age: null
+    })));
+    selected = [];
+}
+
+function getOffsetX() {
+    const totalWidth = COLS * (SEAT_RADIUS*2 + SEAT_GAP) - SEAT_GAP;
+    return (canvas.width - totalWidth) / 2;
+}
+
+function drawSeats() {
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    const offsetX = getOffsetX();
+    // 屏幕
+    ctx.save();
+    ctx.fillStyle = '#bbb';
+    ctx.fillRect(offsetX, 40, COLS * (SEAT_RADIUS*2+SEAT_GAP) - SEAT_GAP, 32);
+    ctx.font = '22px Arial';
+    ctx.fillStyle = '#333';
+    ctx.fillText('银幕', offsetX + (COLS * (SEAT_RADIUS*2+SEAT_GAP))/2 - 30, 62);
+    ctx.restore();
+    // 座位（矩形排列）
+    for(let r=0;r<ROWS;r++){
+        for(let c=0;c<COLS;c++){
+            let x = offsetX + c * (SEAT_RADIUS*2 + SEAT_GAP);
+            let y = 100 + r * (SEAT_RADIUS*2 + SEAT_GAP);
+            let seat = seats[r][c];
+            // 颜色
+            if(seat.status===0) ctx.fillStyle = 'green';
+            else if(seat.status===1) ctx.fillStyle = 'red';
+            else if(seat.status===2) ctx.fillStyle = 'yellow';
+            else if(seat.status===3) ctx.fillStyle = 'orange';
+            ctx.beginPath();
+            ctx.arc(x+SEAT_RADIUS, y+SEAT_RADIUS, SEAT_RADIUS, 0, 2*Math.PI);
+            ctx.fill();
+            ctx.strokeStyle = '#444';
+            ctx.stroke();
+            // 座位号、排号
+            ctx.fillStyle = '#fff';
+            ctx.font = '12px Arial';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText((r+1)+'-'+(c+1), x+SEAT_RADIUS, y+SEAT_RADIUS);
+        }
+    }
+}
+
+function changeHall() {
+    currentHall = parseInt(document.getElementById('hallSize').value);
+    ROWS = HALL_CONFIG[currentHall].rows;
+    COLS = HALL_CONFIG[currentHall].cols;
+    initSeats();
+    drawSeats();
+}
+
+// 初始化
+initSeats();
+drawSeats();
+
+// 选座逻辑
+canvas.addEventListener('click', function(e){
+    let rect = canvas.getBoundingClientRect();
+    let mx = e.clientX - rect.left, my = e.clientY - rect.top;
+    const offsetX = getOffsetX();
+    for(let r=0;r<ROWS;r++){
+        for(let c=0;c<COLS;c++){
+            let x = offsetX + c * (SEAT_RADIUS*2 + SEAT_GAP);
+            let y = 100 + r * (SEAT_RADIUS*2 + SEAT_GAP);
+            let seat = seats[r][c];
+            let dx = mx-(x+SEAT_RADIUS), dy = my-(y+SEAT_RADIUS);
+            if(dx*dx+dy*dy <= SEAT_RADIUS*SEAT_RADIUS){
+                if(seat.status===1) return; // 已售不能选
+                if(event.ctrlKey){
+                    // 多选
+                    if(seat.status===2){ seat.status=0; selected = selected.filter(s=>!(s.row===r&&s.col===c)); }
+                    else if(seat.status===0||seat.status===3){ seat.status=2; selected.push(seat); }
+                }else{
+                    // 单选
+                    seats.forEach(row=>row.forEach(s=>{if(s.status===2)s.status=0;}));
+                    selected = [];
+                    if(seat.status===0||seat.status===3){ seat.status=2; selected.push(seat); }
+                }
+                drawSeats();
+                return;
+            }
+        }
+    }
+});
+
+function switchTicketType(){
+    let type = document.getElementById('ticketType').value;
+    document.getElementById('singleInputs').style.display = type==='single'?'':'none';
+    document.getElementById('groupInputs').style.display = type==='group'?'':'none';
+}
+
+function autoSelectSeat() {
+    let name = document.getElementById('singleName').value.trim();
+    let age = parseInt(document.getElementById('singleAge').value);
+    if(!name){alert('请输入姓名');return;}
+    if(!age||age<1){alert('请输入有效年龄');return;}
+    let validRows = [];
+    if(age<15) validRows = Array.from({length:ROWS-3},(_,i)=>i+3);
+    else if(age>60) validRows = Array.from({length:ROWS-3},(_,i)=>i);
+    else validRows = Array.from({length:ROWS},(_,i)=>i);
+    // 收集所有可选空座
+    let candidates = [];
+    for(let r of validRows){
+        for(let c=0;c<COLS;c++){
+            let seat = seats[r][c];
+            if(seat.status===0){
+                candidates.push(seat);
+            }
+        }
+    }
+    if(candidates.length===0){
+        alert('没有可用座位！');
+        return;
+    }
+    // 随机选一个
+    let idx = Math.floor(Math.random()*candidates.length);
+    let seat = candidates[idx];
+    seats.forEach(row=>row.forEach(s=>{if(s.status===2)s.status=0;}));
+    selected = [seat];
+    seat.status=2;
+    seat.name = name;
+    seat.age = age;
+    drawSeats();
+}
+function autoSelectGroup() {
+    let count = parseInt(document.getElementById('groupCount').value);
+    let names = document.getElementById('groupNames').value.split(',').map(s=>s.trim()).filter(s=>s);
+    let ages = document.getElementById('groupAges').value.split(',').map(s=>parseInt(s.trim())).filter(a=>!isNaN(a));
+    if(names.length!==count||ages.length!==count){ alert('团体人数、姓名、年龄数不符'); return; }
+    let minAge = Math.min(...ages), maxAge = Math.max(...ages);
+    let validRows = [];
+    if(minAge<15) validRows = Array.from({length:ROWS-3},(_,i)=>i+3);
+    else if(maxAge>60) validRows = Array.from({length:ROWS-3},(_,i)=>i);
+    else validRows = Array.from({length:ROWS},(_,i)=>i);
+    // 收集所有可选的团体座位组
+    let groupCandidates = [];
+    for(let r of validRows){
+        for(let c=0;c<=COLS-count;c++){
+            let group = seats[r].slice(c,c+count);
+            if(group.every(seat=>seat.status===0)){
+                groupCandidates.push({row:r, start:c, group});
+            }
+        }
+    }
+    if(groupCandidates.length===0){
+        alert('没有可用的团体座位！');
+        return;
+    }
+    // 随机选一个组
+    let idx = Math.floor(Math.random()*groupCandidates.length);
+    let {row, start, group} = groupCandidates[idx];
+    seats.forEach(row=>row.forEach(s=>{if(s.status===2)s.status=0;}));
+    selected = group;
+    for(let i=0;i<count;i++){
+        group[i].status=2;
+        group[i].name=names[i];
+        group[i].age=ages[i];
+    }
+    drawSeats();
+}
+
+function getCurrentUser() {
+    let type = document.getElementById('ticketType').value;
+    if(type==='single'){
+        let name = document.getElementById('singleName').value.trim();
+        let age = parseInt(document.getElementById('singleAge').value);
+        return {name, age};
+    } else {
+        // 团体票暂不做二次操作区分，按原逻辑
+        return null;
+    }
+}
+
+function hasUserBooked(name, age) {
+    for(let r=0;r<ROWS;r++){
+        for(let c=0;c<COLS;c++){
+            let seat = seats[r][c];
+            if(seat.status===3 && seat.name===name && seat.age===age) return true;
+        }
+    }
+    return false;
+}
+function hasUserBought(name, age) {
+    for(let r=0;r<ROWS;r++){
+        for(let c=0;c<COLS;c++){
+            let seat = seats[r][c];
+            if(seat.status===1 && seat.name===name && seat.age===age) return true;
+        }
+    }
+    return false;
+}
+
+function checkSelectionCount() {
+    let type = document.getElementById('ticketType').value;
+    if(type === 'group') {
+        let count = parseInt(document.getElementById('groupCount').value);
+        if(selected.length > 0 && selected.length !== count) {
+            alert('座位数不符合观影人数');
+            selected.forEach(seat => { if(seat.status === 2) seat.status = 0; });
+            selected = [];
+            drawSeats();
+            return false;
+        }
+    } else if(type === 'single') {
+        if(selected.length > 1) {
+            alert('座位数不符合观影人数');
+            selected.forEach(seat => { if(seat.status === 2) seat.status = 0; });
+            selected = [];
+            drawSeats();
+            return false;
+        }
+    }
+    return true;
+}
+
+function checkSelectionAgeRule() {
+    let type = document.getElementById('ticketType').value;
+    if(type === 'single') {
+        let age = parseInt(document.getElementById('singleAge').value);
+        if(isNaN(age)) return true;
+        let validRows = [];
+        if(age < 15) validRows = Array.from({length:ROWS-3},(_,i)=>i+3);
+        else if(age > 60) validRows = Array.from({length:ROWS-3},(_,i)=>i);
+        else validRows = Array.from({length:ROWS},(_,i)=>i);
+        if(selected.length > 0 && !selected.every(seat => validRows.includes(seat.row))) {
+            alert('选中的座位不符合年龄规则');
+            selected.forEach(seat => { if(seat.status === 2) seat.status = 0; });
+            selected = [];
+            drawSeats();
+            return false;
+        }
+    } else if(type === 'group') {
+        let ages = document.getElementById('groupAges').value.split(',').map(s=>parseInt(s.trim())).filter(a=>!isNaN(a));
+        if(ages.length === 0) return true;
+        let minAge = Math.min(...ages), maxAge = Math.max(...ages);
+        let validRows = [];
+        if(minAge < 15) validRows = Array.from({length:ROWS-3},(_,i)=>i+3);
+        else if(maxAge > 60) validRows = Array.from({length:ROWS-3},(_,i)=>i);
+        else validRows = Array.from({length:ROWS},(_,i)=>i);
+        if(selected.length > 0 && !selected.every(seat => validRows.includes(seat.row))) {
+            alert('选中的座位不符合年龄规则');
+            selected.forEach(seat => { if(seat.status === 2) seat.status = 0; });
+            selected = [];
+            drawSeats();
+            return false;
+        }
+    }
+    return true;
+}
+
+// 在所有需要操作前加校验
+function bookSeats(){
+    if(!checkSelectionCount() || !checkSelectionAgeRule()) return;
+    let user = getCurrentUser();
+    if(!user || !user.name || !user.age){alert('请输入姓名和年龄');return;}
+    let hasBought = false;
+    for(let r=0;r<ROWS;r++){
+        for(let c=0;c<COLS;c++){
+            let seat = seats[r][c];
+            if(seat.status===1 && seat.name===user.name && seat.age===user.age){
+                hasBought = true;
+            }
+        }
+    }
+    if(hasBought){
+        alert('您已经购票');
+        return;
+    }
+    if(hasUserBooked(user.name, user.age)){
+        alert('您已预订过座位');
+        return;
+    }
+    if(selected.length===0){alert('请先选座');return;}
+    selected.forEach(seat=>{
+        if(seat.status===2){
+            seat.status=3;
+            seat.name=user.name;
+            seat.age=user.age;
+        }
+    });
+    selected=[];
+    drawSeats();
+}
+function buySeats(){
+    if(!checkSelectionCount() || !checkSelectionAgeRule()) return;
+    let user = getCurrentUser();
+    if(!user || !user.name || !user.age){alert('请输入姓名和年龄');return;}
+    let changed = false;
+    // 若有预订，直接购票
+    for(let r=0;r<ROWS;r++){
+        for(let c=0;c<COLS;c++){
+            let seat = seats[r][c];
+            if(seat.status===3 && seat.name===user.name && seat.age===user.age){
+                seat.status=1;
+                changed = true;
+            }
+        }
+    }
+    // 若无预订，购当前选中
+    if(selected.length>0){
+        selected.forEach(seat=>{
+            if((seat.status===2||seat.status===3)){
+                seat.status=1;
+                seat.name=user.name;
+                seat.age=user.age;
+                changed = true;
+            }
+        });
+        selected=[];
+    }
+    if(!changed){alert('没有可购票的座位');}
+    drawSeats();
+}
+function cancelBooking(){
+    if(!checkSelectionCount() || !checkSelectionAgeRule()) return;
+    let user = getCurrentUser();
+    if(!user || !user.name || !user.age){alert('请输入姓名和年龄');return;}
+    let hasBooked = false, hasBought = false;
+    for(let r=0;r<ROWS;r++){
+        for(let c=0;c<COLS;c++){
+            let seat = seats[r][c];
+            if(seat.name===user.name && seat.age===user.age){
+                if(seat.status===3) hasBooked = true;
+                if(seat.status===1) hasBought = true;
+            }
+        }
+    }
+    if(hasBought){
+        alert('您已经购票');
+        return;
+    }
+    if(!hasBooked){
+        alert('您还未预订过座位');
+        return;
+    }
+    let changed = false;
+    for(let r=0;r<ROWS;r++){
+        for(let c=0;c<COLS;c++){
+            let seat = seats[r][c];
+            if(seat.status===3 && seat.name===user.name && seat.age===user.age){
+                seat.status=0;
+                seat.name='';
+                seat.age=null;
+                changed = true;
+            }
+        }
+    }
+    drawSeats();
+}
+function refundSeats(){
+    if(!checkSelectionCount() || !checkSelectionAgeRule()) return;
+    let user = getCurrentUser();
+    if(!user || !user.name || !user.age){alert('请输入姓名和年龄');return;}
+    let hasBought = false;
+    for(let r=0;r<ROWS;r++){
+        for(let c=0;c<COLS;c++){
+            let seat = seats[r][c];
+            if(seat.name===user.name && seat.age===user.age && seat.status===1){
+                hasBought = true;
+            }
+        }
+    }
+    if(hasBought){
+        // 正常退票
+        let changed = false;
+        for(let r=0;r<ROWS;r++){
+            for(let c=0;c<COLS;c++){
+                let seat = seats[r][c];
+                if(seat.status===1 && seat.name===user.name && seat.age===user.age){
+                    seat.status=0;
+                    seat.name='';
+                    seat.age=null;
+                    changed = true;
+                }
+            }
+        }
+        drawSeats();
+        return;
+    }
+    // 不是已购票状态，保持原状态不变，弹窗
+    alert('您还未购票');
+}
+// 手动选座时允许先点座位再输入信息，购票/预订/退票/取消预订时以输入框当前姓名和年龄为准
+    </script>
+</body>
+</html>
