@@ -26,6 +26,7 @@
             <button type="button" onclick="addMovie()">添加电影</button>
             <label>场次：</label>
             <select id="sessionSelect" onchange="onSessionChange()"></select>
+            <input type="date" id="sessionDate" style="width:130px;">
             <input type="time" id="sessionStart"> - <input type="time" id="sessionEnd">
             <select id="sessionHallSize">
                 <option value="100">100人</option>
@@ -389,8 +390,86 @@ function checkSelectionAgeRule() {
     return true;
 }
 
+// 判断当前场次是否已开始
+function isCurrentSessionStarted() {
+    if(movies.length===0) return false;
+    const sessions = movies[currentMovieIdx]?.sessions;
+    if(!sessions || sessions.length===0) return false;
+    const session = sessions[currentSessionIdx];
+    if(!session) return false;
+    // 当前日期+时间
+    const now = new Date();
+    // 场次日期+开始时间
+    const sessionDate = session.date;
+    const sessionStart = session.start;
+    if(!sessionDate || !sessionStart) return false;
+    const sessionStartDate = new Date(sessionDate + 'T' + sessionStart);
+    return now >= sessionStartDate;
+}
+
+// 电影开始后自动清理未购票的预订座位
+function clearExpiredBookings() {
+    if(movies.length===0) return;
+    const sessions = movies[currentMovieIdx]?.sessions;
+    if(!sessions || sessions.length===0) return;
+    const session = sessions[currentSessionIdx];
+    if(!session || !session.seats) return;
+    for(let r=0;r<session.seats.length;r++){
+        for(let c=0;c<session.seats[r].length;c++){
+            let seat = session.seats[r][c];
+            if(seat.status===3) seat.status=0;
+        }
+    }
+    // 同步到当前seats
+    seats = JSON.parse(JSON.stringify(session.seats));
+    drawSeats();
+}
+
+// 定时自动清理已开始场次的预订座位
+setInterval(function(){
+    if(isCurrentSessionStarted()){
+        // 只要有预订座位就清理
+        let hasBooking = false;
+        for(let r=0;r<seats.length;r++){
+            for(let c=0;c<seats[r].length;c++){
+                if(seats[r][c].status===3){
+                    hasBooking = true;
+                    break;
+                }
+            }
+            if(hasBooking) break;
+        }
+        if(hasBooking){
+            // 直接清理当前seats和session.seats
+            for(let r=0;r<seats.length;r++){
+                for(let c=0;c<seats[r].length;c++){
+                    if(seats[r][c].status===3){
+                        seats[r][c].status=0;
+                        seats[r][c].name='';
+                        seats[r][c].age=null;
+                        seats[r][c].groupKey='';
+                    }
+                }
+            }
+            // 同步到session.seats
+            if(movies.length>0){
+                const sessions = movies[currentMovieIdx]?.sessions;
+                if(sessions && sessions.length>0 && sessions[currentSessionIdx]){
+                    sessions[currentSessionIdx].seats = JSON.parse(JSON.stringify(seats));
+                }
+            }
+            drawSeats();
+        }
+    }
+}, 1000);
+
 // 在所有需要操作前加校验
 function bookSeats(){
+    if(isCurrentSessionStarted()){
+        clearExpiredBookings();
+        alert('电影已开始，不能预订座位');
+        return;
+    }
     if(!checkSelectionCount() || !checkSelectionAgeRule()) return;
     let user = getCurrentUser();
     let type = document.getElementById('ticketType').value;
@@ -566,6 +645,10 @@ function buySeats(){
 }
 
 function cancelBooking(){
+    if(isCurrentSessionStarted()){
+        alert('电影已开始，不能取消预订');
+        return;
+    }
     if(!checkSelectionCount() || !checkSelectionAgeRule()) return;
     let user = getCurrentUser();
     let type = document.getElementById('ticketType').value;
@@ -639,6 +722,10 @@ function cancelBooking(){
 }
 
 function refundSeats(){
+    if(isCurrentSessionStarted()){
+        alert('电影已开始，不能退票');
+        return;
+    }
     if(!checkSelectionCount() || !checkSelectionAgeRule()) return;
     let user = getCurrentUser();
     let type = document.getElementById('ticketType').value;
@@ -769,28 +856,40 @@ function addMovie() {
 }
 function addSession() {
     if(movies.length===0){alert('请先添加电影');return;}
+    const date = document.getElementById('sessionDate').value;
     const start = document.getElementById('sessionStart').value;
     const end = document.getElementById('sessionEnd').value;
     const hallSize = parseInt(document.getElementById('sessionHallSize').value);
+    if(!date){alert('请选择日期');return;}
+    // 新增：校验日期不可早于今天
+    const today = new Date();
+    const yyyy = today.getFullYear();
+    const mm = String(today.getMonth()+1).padStart(2,'0');
+    const dd = String(today.getDate()).padStart(2,'0');
+    const todayStr = `${yyyy}-${mm}-${dd}`;
+    if(date < todayStr){
+        alert('只能安排今天及以后的场次');
+        return;
+    }
     if(!start||!end){alert('请选择时间段');return;}
     if(start>=end){alert('结束时间需大于开始时间');return;}
-    // 查找所有电影的所有场次，统计该规模在该时间段已占用的厅号
+    // 查找所有电影的所有场次，统计该规模在该日期和时间段已占用的厅号
     let usedNos = [];
     for(let m=0;m<movies.length;m++){
         let sessions = movies[m].sessions;
         for(let s=0;s<sessions.length;s++){
             let sess = sessions[s];
-            if(sess.hallSize === hallSize && !(end <= sess.start || start >= sess.end)){
+            if(sess.hallSize === hallSize && sess.date === date && !(end <= sess.start || start >= sess.end)){
                 usedNos.push(sess.hallNo);
             }
         }
     }
-    // 新增：同一电影同一时间段同一规模同一编号只能用一次
+    // 新增：同一电影同一日期同一时间段同一规模同一编号只能用一次
     let thisMovieSessions = movies[currentMovieIdx].sessions;
     for(let s=0;s<thisMovieSessions.length;s++){
         let sess = thisMovieSessions[s];
-        if(sess.hallSize === hallSize && !(end <= sess.start || start >= sess.end)){
-            usedNos.push(sess.hallNo); // 再次push，确保本电影同时间段同编号绝不重复
+        if(sess.hallSize === hallSize && sess.date === date && !(end <= sess.start || start >= sess.end)){
+            usedNos.push(sess.hallNo);
         }
     }
     let hallNo = -1;
@@ -801,7 +900,7 @@ function addSession() {
         alert('无该规模可用放映厅');
         return;
     }
-    movies[currentMovieIdx].sessions.push({start, end, hallSize, hallNo, seats: null});
+    movies[currentMovieIdx].sessions.push({date, start, end, hallSize, hallNo, seats: null});
     renderSessionSelect();
 }
 function renderMovieSelect() {
@@ -813,7 +912,7 @@ function renderMovieSelect() {
 function renderSessionSelect() {
     const sel = document.getElementById('sessionSelect');
     const sessions = movies[currentMovieIdx]?.sessions||[];
-    sel.innerHTML = sessions.map((s,i)=>`<option value="${i}">${s.start}~${s.end} (${s.hallSize}人厅${s.hallNo||''})</option>`).join('');
+    sel.innerHTML = sessions.map((s,i)=>`<option value="${i}">${s.date||''} ${s.start}~${s.end} (${s.hallSize}人厅${s.hallNo||''})</option>`).join('');
     currentSessionIdx = 0;
     if(sessions.length>0) {
         loadCurrentSessionSeats();
@@ -872,6 +971,13 @@ function updateHallCount() {
 // 页面加载时渲染放映厅数量设置区
 window.onload = function() {
     renderHallCountInputs();
+    // 设置日期选择框最小值为今天
+    const today = new Date();
+    const yyyy = today.getFullYear();
+    const mm = String(today.getMonth() + 1).padStart(2, '0');
+    const dd = String(today.getDate()).padStart(2, '0');
+    const minDate = `${yyyy}-${mm}-${dd}`;
+    document.getElementById('sessionDate').setAttribute('min', minDate);
     movies = [
         {name:'默认电影',sessions:[{start:'18:00',end:'20:00',hallSize:200,hallNo:1}]}
     ];
