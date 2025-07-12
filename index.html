@@ -978,9 +978,20 @@ window.onload = function() {
     const dd = String(today.getDate()).padStart(2, '0');
     const minDate = `${yyyy}-${mm}-${dd}`;
     document.getElementById('sessionDate').setAttribute('min', minDate);
+    const urlParams = new URLSearchParams(window.location.search);
+    const movieName = urlParams.get('movie') || '默认电影';
+
+    // 设置页面标题
+    const h2 = document.querySelector("h2");
+    if (h2) {
+        h2.textContent = movieName + '选座系统';
+    }
+
+    // 构造带有传入名称的电影对象
     movies = [
-        {name:'默认电影',sessions:[{start:'18:00',end:'20:00',hallSize:200,hallNo:1}]}
+        {name: movieName, sessions: [{start:'18:00', end:'20:00', hallSize:200, hallNo:1}]}
     ];
+
     renderMovieSelect();
     setHallBySession();
 };
