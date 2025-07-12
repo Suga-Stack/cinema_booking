@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="UTF-8">
+    <title>电影院选座系统</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif; background: #f5f5f5;
+            margin: 40px;
+            background: #fff;
+        }
+        h2 {
+            color: red;
+            margin-bottom: 30px;
+        }
+
+        .container {
+            display: flex;
+            gap: 40px;
+        }
+
+        .movie-section {
+            flex: 3;
+        }
+
+        .movie-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+        }
+
+        .movie-card {
+            border: 1px solid #eee;
+            text-align: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .movie-card:hover {
+            transform: scale(1.03);
+        }
+
+        .movie-card img {
+            width: 100%;
+            height: 300px;
+            object-fit: cover;
+        }
+
+        .title {
+            font-weight: bold;
+            margin: 10px 0;
+        }
+
+        .rating {
+            color: orange;
+            font-weight: bold;
+        }
+
+        .buy-btn {
+            background: #F5F5F5;
+            padding: 8px 0;
+            transition: background 0.3s;
+        }
+
+        .buy-btn:hover {
+            background: red;
+            color: white;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .toggle-btn {
+            margin-top: 20px;
+            padding: 10px 20px;
+            font-size: 14px;
+            cursor: pointer;
+        }
+
+        .ranking-section {
+            flex: 1;
+        }
+
+        .ranking-section h2 {
+            margin-bottom: 15px;
+            color:#FFC170;
+        }
+
+        .ranking-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .ranking-list li {
+            padding: 8px 0;
+            border-bottom: 1px dashed #ccc;
+            font-size: 16px;
+        }
+
+        .ranking-list li:first-child {
+            font-size: 20px;
+            font-weight: bold;
+            color: red;
+        }
+  </style>
+</head>
+<body>
+    <h1>电影选择</h1>
+    <hr>
+    <div class="container">
+
+        <!-- 左侧 热门电影 -->
+        <div class="movie-section">
+            <h2 style="margin-bottom: 15px;">热门电影</h2>
+        <div class="movie-grid">
+            <!-- 8部默认展示 -->
+            <div class="movie-card" onclick="goToMovie('电影1')">
+            <img src="images/movie1.png" alt="movie1">
+            <div class="title">电影1</div>
+            <div class="rating">9.5</div>
+            <div class="buy-btn">购票</div>
+            </div>
+
+            <div class="movie-card" onclick="goToMovie('电影2')">
+            <img src="images/movie2.png" alt="movie2">
+            <div class="title">电影2</div>
+            <div class="rating">8.6</div>
+            <div class="buy-btn">购票</div>
+            </div>
+
+            <div class="movie-card" onclick="goToMovie('电影3')">
+            <img src="images/movie3.png" alt="movie3">
+            <div class="title">电影3</div>
+            <div class="rating">8.9</div>
+            <div class="buy-btn">购票</div>
+            </div>
+
+            <div class="movie-card" onclick="goToMovie('电影4')">
+            <img src="images/movie4.png" alt="movie4">
+            <div class="title">电影4</div>
+            <div class="rating">9.4</div>
+            <div class="buy-btn">购票</div>
+            </div>
+
+            <div class="movie-card" onclick="goToMovie('电影5')">
+            <img src="images/movie5.png" alt="movie5">
+            <div class="title">电影5</div>
+            <div class="rating">9.0</div>
+            <div class="buy-btn">购票</div>
+            </div>
+
+            <div class="movie-card" onclick="goToMovie('电影6')">
+            <img src="images/movie6.png" alt="movie6">
+            <div class="title">电影6</div>
+            <div class="rating">9.5</div>
+            <div class="buy-btn">购票</div>
+            </div>
+
+            <div class="movie-card" onclick="goToMovie('电影7')">
+            <img src="images/movie7.png" alt="movie7">
+            <div class="title">电影7</div>
+            <div class="rating">8.3</div>
+            <div class="buy-btn">购票</div>
+            </div>
+
+            <div class="movie-card" onclick="goToMovie('电影8')">
+            <img src="images/movie8.png" alt="movie8">
+            <div class="title">电影8</div>
+            <div class="rating">8.1</div>
+            <div class="buy-btn">购票</div>
+            </div>
+
+            <!-- 隐藏的4部电影 -->
+            <div class="movie-card hidden extra" onclick="goToMovie('电影9')">
+            <img src="images/movie9.png" alt="movie9">
+            <div class="title">电影9</div>
+            <div class="rating">7.8</div>
+            <div class="buy-btn">购票</div>
+            </div>
+
+            <div class="movie-card hidden extra" onclick="goToMovie('电影10')">
+            <img src="images/movie10.png" alt="movie10">
+            <div class="title">电影10</div>
+            <div class="rating">8.0</div>
+            <div class="buy-btn">购票</div>
+            </div>
+
+            <div class="movie-card hidden extra" onclick="goToMovie('电影11')">
+            <img src="images/movie11.png" alt="movie11">
+            <div class="title">电影11</div>
+            <div class="rating">7.6</div>
+            <div class="buy-btn">购票</div>
+            </div>
+
+            <div class="movie-card hidden extra" onclick="goToMovie('电影12')">
+            <img src="images/movie12.png" alt="movie12">
+            <div class="title">电影12</div>
+            <div class="rating">8.2</div>
+            <div class="buy-btn">购票</div>
+            </div>
+        </div>
+
+        <button class="toggle-btn" onclick="toggleExtra()">展开更多</button>
+        </div>
+
+        <!-- 右侧 排行榜 -->
+        <div class="ranking-section">
+        <h2>今日票房排行</h2>
+        <ul class="ranking-list">
+            <li>1. 电影1：1323.9万</li>
+            <li>2. 电影2：1073.7万</li>
+            <li>3. 电影3：1066.9万</li>
+            <li>4. 电影4：955.0万</li>
+            <li>5. 电影5：678.9万</li>
+            <li>6. 电影6：621.4万</li>
+            <li>7. 电影7：590.3万</li>
+            <li>8. 电影8：482.2万</li>
+            <li>9. 电影9：400.1万</li>
+            <li>10. 电影10：398.5万</li>
+        </ul>
+        </div>
+
+    </div>
+
+    <script>
+        // 传递电影名称信息
+        function goToMovie(movieName) {
+            const encodedName = encodeURIComponent(movieName);
+            location.href = `index.html?movie=${encodedName}`;
+        }
+        // 收起/展开功能
+        function toggleExtra() {
+            const extraMovies = document.querySelectorAll('.extra');
+            const button = document.querySelector('.toggle-btn');
+            const isHidden = extraMovies[0].classList.contains('hidden');
+            extraMovies.forEach(el => el.classList.toggle('hidden'));
+            button.textContent = isHidden ? "收起" : "展开全部";
+        }
+    </script>
+
+</body>
+</html>
