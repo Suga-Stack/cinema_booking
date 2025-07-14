@@ -388,6 +388,20 @@ function isCurrentSessionStarted() {
     const sessionStartDate = new Date(sessionDate + 'T' + sessionStart);
     return now >= sessionStartDate;
 }
+// 判断当前场次是否已结束
+function isCurrentSessionEnded() {
+    if(movies.length===0) return false;
+    const sessions = movies[currentMovieIdx]?.sessions;
+    if(!sessions || sessions.length===0) return false;
+    const session = sessions[currentSessionIdx];
+    if(!session) return false;
+    const now = new Date();
+    const sessionDate = session.date;
+    const sessionEnd = session.end;
+    if(!sessionDate || !sessionEnd) return false;
+    const sessionEndDate = new Date(sessionDate + 'T' + sessionEnd);
+    return now >= sessionEndDate;
+}
 
 // 电影开始后自动清理未购票的预订座位
 function clearExpiredBookings() {
@@ -447,6 +461,10 @@ setInterval(function(){
 
 // 在所有需要操作前加校验
 function bookSeats(){
+    if(isCurrentSessionEnded()){
+        alert('电影已结束，不能预订座位');
+        return;
+    }
     if(isCurrentSessionStarted()){
         clearExpiredBookings();
         alert('电影已开始，不能预订座位');
@@ -524,6 +542,10 @@ function bookSeats(){
 }
 
 function buySeats(){
+    if(isCurrentSessionEnded()){
+        alert('电影已结束，不能购票');
+        return;
+    }
     if(!checkSelectionCount() || !checkSelectionAgeRule()) return;
     let user = getCurrentUser();
     let type = document.getElementById('ticketType').value;
@@ -627,6 +649,10 @@ function buySeats(){
 }
 
 function cancelBooking(){
+    if(isCurrentSessionEnded()){
+        alert('电影已结束，不能取消预订');
+        return;
+    }
     if(isCurrentSessionStarted()){
         alert('电影已开始，不能取消预订');
         return;
@@ -704,6 +730,10 @@ function cancelBooking(){
 }
 
 function refundSeats(){
+    if(isCurrentSessionEnded()){
+        alert('电影已结束，不能退票');
+        return;
+    }
     if(isCurrentSessionStarted()){
         alert('电影已开始，不能退票');
         return;
