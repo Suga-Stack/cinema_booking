@@ -669,6 +669,27 @@
         }
 
         // 初始化调用
+        function updateHallAndSeatsBySession() {
+            if (movies.length === 0) return;
+            const sessions = movies[currentMovieIdx]?.sessions;
+            if (!sessions || sessions.length === 0) return;
+            const session = sessions[currentSessionIdx];
+            if (!session) return;
+            currentHall = session.hallSize;
+            ROWS = HALL_CONFIG[currentHall].rows;
+            COLS = HALL_CONFIG[currentHall].cols;
+            // 动态调整canvas尺寸
+            if (currentHall == 100) {
+                canvas.width = 800;
+                canvas.height = 550;
+            } else if (currentHall == 200) {
+                canvas.width = 1200;
+                canvas.height = 590;
+            } else if (currentHall == 300) {
+                canvas.width = 1200;
+                canvas.height = 800;
+            }
+        }
         initSeats();
         drawSeats();
 
@@ -1419,21 +1440,33 @@
             if (!sessions || sessions.length === 0) return;
             if (typeof sessions[currentSessionIdx] === 'undefined') return;
             let session = sessions[currentSessionIdx];
-            // 更新影厅配置
             currentHall = session.hallSize;
             ROWS = HALL_CONFIG[currentHall].rows;
             COLS = HALL_CONFIG[currentHall].cols;
+            // 动态调整canvas尺寸
+            if (currentHall == 100) {
+                canvas.width = 800;
+                canvas.height = 550;
+            } else if (currentHall == 200) {
+                canvas.width = 1200;
+                canvas.height = 590;
+            } else if (currentHall == 300) {
+                canvas.width = 1200;
+                canvas.height = 800;
+            }
             if (!session.seats) {
-                // 如果是首次进入该场次，则初始化座位
+                // 首次进入该场次，初始化
                 seats = Array.from({ length: ROWS }, (_, r) => Array.from({ length: COLS }, (_, c) => ({
                     status: 0,
                     row: r, col: c,
                     number: r * COLS + c + 1,
                     name: '',
                     age: null,
-                    groupKey: ''
+                    groupKey: '',
+                    x: 0,
+                    y: 0
                 })));
-                // 保存初始化后的座位到session
+                // 保存到session
                 session.seats = JSON.parse(JSON.stringify(seats));
                 // 同步到localStorage
                 let allMovies = JSON.parse(localStorage.getItem('allMovies') || '[]');
@@ -1443,7 +1476,7 @@
                     localStorage.setItem('allMovies', JSON.stringify(allMovies));
                 }
             } else {
-                // 如果已有座位数据，则恢复
+                // 恢复
                 seats = JSON.parse(JSON.stringify(session.seats));
             }
             selected = [];
@@ -1462,10 +1495,11 @@
          * @description 切换场次时的处理函数
          */
         function onSessionChange() {
-            saveCurrentSessionSeats(); // 保存上一个场次的座位
+            saveCurrentSessionSeats();
             currentSessionIdx = parseInt(document.getElementById('sessionSelect').value);
-            loadCurrentSessionSeats(); // 加载新场次的座位
-            drawSeats(); // 绘制新场次的座位
+            updateHallAndSeatsBySession();
+            loadCurrentSessionSeats();
+            drawSeats();
         }
 
         // 页面加载完成时的初始化函数
@@ -1495,23 +1529,11 @@
                 sessionSelect.innerHTML = sessions.map((s, i) => `<option value="${i}">${s.date} ${s.start}~${s.end} (${s.hallSize}人厅${s.hallNo})</option>`).join('');
                 currentSessionIdx = 0;
                 if (sessions.length > 0) {
-                    // 设置厅规模下拉
-                    const hallSizeSel = document.getElementById('hallSize');
-                    hallSizeSel.innerHTML = '';
-                    let used = {};
-                    sessions.forEach(s => used[s.hallSize] = true);
-                    Object.keys(used).forEach(size => {
-                        hallSizeSel.innerHTML += `<option value="${size}">${size}人</option>`;
-                    });
-                    hallSizeSel.value = sessions[0].hallSize;
-                    currentHall = sessions[0].hallSize;
-                    ROWS = HALL_CONFIG[currentHall].rows;
-                    COLS = HALL_CONFIG[currentHall].cols;
-                    loadCurrentSessionSeats(); // 加载座位
-                    drawSeats(); // 绘制座位
+                    updateHallAndSeatsBySession();
+                    loadCurrentSessionSeats();
+                    drawSeats();
                 }
             }
-            // 将renderSessionSelect挂载到window，以便在其他地方调用
             window.renderSessionSelect = renderSessionSelect;
             // 绑定下拉框的onchange事件
             movieSelect.onchange = function () {
@@ -1527,3 +1549,4 @@
 </body>
 
 </html>
+>>>>>>> origin/ssr/frontpage

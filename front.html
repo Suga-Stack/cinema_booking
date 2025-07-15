@@ -41,10 +41,14 @@
             display: grid;
             grid-template-columns: repeat(4, 1fr);
             gap: 20px;
+            align-items: stretch;
         }
 
         /* 电影卡片样式 */
         .movie-card {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
             border: 1px solid #eee;
             text-align: center;
             box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
@@ -70,6 +74,7 @@
         .title {
             font-weight: bold;
             margin: 10px 0;
+            flex-grow: 1;
         }
 
         /* 电影评分样式 */
@@ -83,12 +88,19 @@
             background: #F5F5F5;
             padding: 8px 0;
             transition: background 0.3s;
+            margin-top: auto;
         }
 
         /* 购票按钮悬停效果 */
         .buy-btn:hover {
             background: red;
             color: white;
+        }
+
+        /* 票价样式 */
+        .buy-btn .price {
+            font-weight: bold;
+            font-size: 18px;
         }
 
         /* 隐藏元素类 */
@@ -248,6 +260,7 @@
     <div class="add-movie-form">
         <label>电影名：</label><input type="text" id="movieName" placeholder="如：流浪地球2" style="width:120px;">
         <label>评分：</label><input type="number" id="movieRating" min="0" max="10" step="0.1" style="width:60px;">
+        <label>票价：</label><input type="number" id="moviePrice" min="0" max="100" step="0.1" style="width:60px;">
         <label>图片链接：</label><input type="text" id="movieImg" placeholder="图片URL或images/xxx.png" style="width:180px;">
         <button onclick="addMovie()">添加电影</button>
     </div>
@@ -312,14 +325,16 @@
         function addMovie() {
             const name = document.getElementById('movieName').value.trim();
             const rating = parseFloat(document.getElementById('movieRating').value) || '';
+            const price = parseFloat(document.getElementById('moviePrice').value) || '';
             const img = document.getElementById('movieImg').value.trim();
             if (!name) { alert('请输入电影名'); return; }
             let movies = getAllMovies();
             if (movies.find(m => m.name === name)) { alert('该电影已存在'); return; }
-            movies.push({ name, rating, img, sessions: [] });
+            movies.push({ name, rating, price, img, sessions: [] });
             setAllMovies(movies);
             document.getElementById('movieName').value = '';
             document.getElementById('movieRating').value = '';
+            document.getElementById('moviePrice').value = '';
             document.getElementById('movieImg').value = '';
             renderMovies();
         }
@@ -339,7 +354,7 @@
             <img src="${m.img || 'images/movie' + ((idx % 12) + 1) + '.png'}" alt="${m.name}">
             <div class="title">${m.name}</div>
             <div class="rating">${m.rating ? m.rating : '--'}</div>
-            <div class="buy-btn">购票</div>
+            <div class="buy-btn">购票<span class="price">  ￥${m.price ? m.price : '--'}</span></div>
             <button class="session-btn" onclick="event.stopPropagation();openSessionModal('${m.name}')">场次管理</button>
             <button class="delete-btn" style="position:absolute;left:10px;top:10px;background:#f55;color:#fff;border:none;border-radius:4px;padding:2px 8px;font-size:12px;cursor:pointer;" onclick="event.stopPropagation();deleteMovie('${m.name}')">删除</button>
         `;
