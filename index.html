@@ -262,8 +262,14 @@
             border: 1px solid #888;
         }
 
-        #cinema-canvas {
+        .legend-box2 {
+            width: 20px;
+            height: 20px;
+            display: inline-block;
+            border: 1px dashed red;
+        }
 
+        #cinema-canvas {
             display: block;
             margin: 12px auto;
         }
@@ -327,12 +333,16 @@
             padding-right: 3px;
             font-size: 17px;
             border-radius: 2px;
-            transition: transform 0.2s ease;
+            transition: all 0.2s ease;
         }
 
         button:hover {
-            transform: scale(1.05);
+            background-color: #bf3ee7;
+            color: white;
+            transform: scale(1.03);
             cursor: pointer;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+            border-color: #a535c9;
         }
 
         .nothing {
@@ -403,6 +413,8 @@
                 <span><span class="legend-box" style="background:yellow;"></span>选中未售</span>
                 <span><span class="legend-box" style="background:red;"></span>已售</span>
                 <span><span class="legend-box" style="background:orange;"></span>预订</span>
+                <span><span class="legend-box2"
+                        style="background:rgb(230, 230, 230);margin-left: 700px;"></span>最佳观影区</span>
             </div>
             <!-- 影院座位画布 -->
             <canvas id="cinema-canvas"></canvas>
@@ -541,7 +553,24 @@
                 ctx.moveTo(endX1, endY1 - 2);
                 ctx.lineTo(endX2, endY2);
                 ctx.stroke();
+                // 最佳观影区
+                ctx.save();
 
+                ctx.fillStyle = 'rgb(230, 230, 230)';
+                ctx.strokeStyle = 'red';
+                ctx.setLineDash([5, 5]);
+                ctx.lineWidth = 2;
+
+                ctx.beginPath();
+                const arcAngle = startAngle - endAngle;
+                ctx.arc(centerX1, centerY1, 3840, startAngle - arcAngle * 0.2, endAngle + arcAngle * 0.2);
+                ctx.arc(centerX1, centerY1, 3560, endAngle + arcAngle * 0.2, startAngle - arcAngle * 0.2, true);
+                ctx.lineTo(288, 272);
+
+                ctx.stroke();
+                ctx.fill();
+
+                ctx.restore();
             } else if (COLS == 10) {// 100人厅
                 canvas.width = 800;
                 canvas.height = 550;
@@ -574,6 +603,24 @@
                 ctx.moveTo(672, 20);
                 ctx.lineTo(643, 439);
                 ctx.stroke();
+                // 最佳观影区
+                ctx.save();
+
+                ctx.fillStyle = 'rgb(230, 230, 230)';
+                ctx.strokeStyle = 'red';
+                ctx.setLineDash([5, 5]);
+                ctx.lineWidth = 2;
+
+                ctx.beginPath();
+                const arcAngle = startAngle - endAngle;
+                ctx.arc(centerX1, centerY1, 3750, startAngle - arcAngle * 0.2, endAngle + arcAngle * 0.2);
+                ctx.arc(centerX1, centerY1, 3550, endAngle + arcAngle * 0.2, startAngle - arcAngle * 0.2, true);
+                ctx.lineTo(238, 143);
+
+                ctx.stroke();
+                ctx.fill();
+
+                ctx.restore();
             } else if (COLS == 20) {// 200人厅
                 canvas.width = 1200;
                 canvas.height = 590;
@@ -606,6 +653,24 @@
                 ctx.moveTo(endX1 - 1, endY1 + 6);
                 ctx.lineTo(endX2, endY2);
                 ctx.stroke();
+                // 最佳观影区
+                ctx.save();
+
+                ctx.fillStyle = 'rgb(230, 230, 230)';
+                ctx.strokeStyle = 'red';
+                ctx.setLineDash([5, 5]);
+                ctx.lineWidth = 2;
+
+                ctx.beginPath();
+                const arcAngle = startAngle - endAngle;
+                ctx.arc(centerX1, centerY1, 3960, startAngle - arcAngle * 0.205, endAngle + arcAngle * 0.205);
+                ctx.arc(centerX1, centerY1, 3760, endAngle + arcAngle * 0.205, startAngle - arcAngle * 0.205, true);
+                ctx.lineTo(299, 152);
+
+                ctx.stroke();
+                ctx.fill();
+
+                ctx.restore();
             }
 
             const centerX = canvas.width / 2;
@@ -1549,4 +1614,3 @@
 </body>
 
 </html>
->>>>>>> origin/ssr/frontpage
