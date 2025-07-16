@@ -5,29 +5,208 @@
     <title>电影院选座系统</title>
     <style>
         /* 全局样式 */
+        * {
+            margin: 0;
+            padding: 0;
+            border: 0;
+            box-sizing: border-box;
+            background: none;
+            list-style: none;
+            outline: none;
+            text-decoration: none;
+        }
+
         body {
-            font-family: Arial, sans-serif;
-            background: #f5f5f5;
-            margin: 40px;
-            background: #fff;
+            font-family: Microsoft YaHei, Helvetica, Arial, sans-serif;
+            font-size: 14px;
+            background-color: #fff;
+            display: block;
+            height: 100%;
+            overflow-y: auto;
+            overflow-x: auto;
         }
 
-        /* 页面标题样式 */
-        h1 {
+        div {
+            display: block;
+            unicode-bidi: isolate;
+        }
+
+        .header {
+            position: fixed;
+            top: 0;
+            z-index: 999;
+            width: 100%;
+            min-width: 1200px;
+            background-color: #fff;
+            border-bottom: 1px solid #d8d8d8;
+        }
+
+        .header .header-inner {
+            position: relative;
+            width: 1200px;
+            height: 80px;
+            margin: auto;
+        }
+
+        .logo-background {
+            float: left;
+            width: 160px;
+            height: 80px;
+            background: url(images/ts-logo-40px.png) no-repeat;
+            background-position: 0 20px;
+            padding: 20px 0 20px 45px;
+            display: flex;
+            align-items: center;
+        }
+
+        .logo-background .logo-img {
+            width: auto;
+            height: 33px;
+        }
+
+        .nav {
+            background-color: #fff;
+            width: 530px;
+            float: left;
+            display: flex;
+            flex-direction: row;
+            justify-content: flex-start;
+        }
+
+        .nav div {
+            width: 66px;
+        }
+
+        .nav div a {
             text-align: center;
+            display: inline-block;
+            height: 80px;
+            line-height: 80px;
+            width: 100%;
+            font-size: 18px;
             color: #333;
+            transition: color 0.3s ease;
         }
 
-        /* 二级标题样式 */
-        h2 {
-            color: red;
-            margin-bottom: 30px;
+        .header-placeholder {
+            height: 81px;
+        }
+
+        .container {
+            position: relative;
+            width: 1200px;
+            margin: 0 auto;
+        }
+
+        .progress-bar {
+            height: 60px;
+            width: 100%;
+            margin: 40px 0;
+            text-align: center;
+        }
+
+        .step {
+            width: 400px;
+            float: left;
+        }
+
+        .progress-bar .first .step-num {
+            color: #fff;
+            font-size: 12px;
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            line-height: 16px;
+            border-radius: 10px;
+            text-align: center;
+            background-color: #bf3ee7;
+            position: relative;
+            top: 10px;
+        }
+
+        .progress-bar .first .bar {
+            width: 0;
+            height: 4px;
+            border-left: 200px solid;
+            border-right: 200px solid;
+            border-right-color: #bf3ee7;
+            border-left-color: transparent;
+        }
+
+        .progress-bar .first .step-text {
+            font-size: 14px;
+            color: #bf3ee7;
+            display: inline-block;
+            margin-top: 10px;
+        }
+
+        .progress-bar .second .step-num {
+            color: #fff;
+            font-size: 12px;
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            line-height: 16px;
+            border-radius: 10px;
+            text-align: center;
+            background-color: #b598be;
+            position: relative;
+            top: 10px;
+        }
+
+        .progress-bar .second .bar {
+            width: 0;
+            height: 4px;
+            border-left: 200px solid;
+            border-right: 200px solid;
+            border-color: #91709c;
+        }
+
+        .progress-bar .second .step-text {
+            font-size: 14px;
+            color: #756c78;
+            display: inline-block;
+            margin-top: 10px;
+        }
+
+        .progress-bar .third .step-num {
+            color: #fff;
+            font-size: 12px;
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            line-height: 16px;
+            border-radius: 10px;
+            text-align: center;
+            background-color: #b598be;
+            position: relative;
+            top: 10px;
+        }
+
+        .progress-bar .third .bar {
+            width: 0;
+            height: 4px;
+            border-left: 200px solid;
+            border-right: 200px solid;
+            border-left-color: #91709c;
+            border-right-color: transparent;
+        }
+
+        .progress-bar .third .step-text {
+            font-size: 14px;
+            color: #756c78;
+            display: inline-block;
+            margin-top: 10px;
         }
 
         /* 容器布局 - 弹性盒模型 */
-        .container {
+        .box {
             display: flex;
             gap: 40px;
+            padding: 20px;
+            background: #faf5fc;
+            border-radius: 8px;
+            margin-top: 15px;
         }
 
         /* 电影区域样式 */
@@ -40,11 +219,15 @@
             display: grid;
             grid-template-columns: repeat(4, 1fr);
             gap: 20px;
+            align-items: stretch;
         }
 
         /* 电影卡片样式 */
         .movie-card {
-            border: 1px solid #eee;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            border: 1px solid #f3e5f5;
             text-align: center;
             box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
             cursor: pointer;
@@ -69,25 +252,33 @@
         .title {
             font-weight: bold;
             margin: 10px 0;
+            flex-grow: 1;
         }
 
         /* 电影评分样式 */
         .rating {
-            color: orange;
+            color: #ba68c8;
             font-weight: bold;
         }
 
         /* 购票按钮样式 */
         .buy-btn {
-            background: #F5F5F5;
+            background: #f3e5f5;
             padding: 8px 0;
             transition: background 0.3s;
+            margin-top: auto;
         }
 
         /* 购票按钮悬停效果 */
         .buy-btn:hover {
-            background: red;
+            background: #9c27b0;
             color: white;
+        }
+
+        /* 票价样式 */
+        .buy-btn .price {
+            font-weight:bold;
+            font-size: 18px;
         }
 
         /* 隐藏元素类 */
@@ -108,10 +299,16 @@
             flex: 1;
         }
 
+         /* 二级标题样式 */
+        .movie-section h2 {
+            color: #9c27b0;
+            margin-bottom: 30px;
+        }
+
         /* 排行榜标题样式 */
         .ranking-section h2 {
             margin-bottom: 15px;
-            color: #FFC170;
+            color: #ba68c8;
         }
 
         /* 排行榜列表样式 */
@@ -144,16 +341,103 @@
             box-shadow: 0 1px 4px #eee;
         }
 
-        /* 表单输入框样式 */
-        .add-movie-form input[type="text"],
-        .add-movie-form input[type="number"] {
-            margin-right: 10px;
-            padding: 4px 8px;
+        /* 放映厅配置表单美化 */
+        .add-movie-form.hall-config {
+            background: #f3e5f5; /* 浅紫色背景 */
+            border: 1px solid #ce93d8; /* 紫色边框 */
+            border-radius: 8px;
+            padding: 15px 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 1px 3px rgba(156, 39, 176, 0.1); /* 淡紫色阴影 */
         }
 
-        /* 表单标签样式 */
-        .add-movie-form label {
+        .add-movie-form.hall-config label:first-child {
+            color: #7b1fa2; /* 深紫色文字 */
+            font-weight: bold;
+            margin-right: 15px;
+            display: inline-block;
+            width: 110px;
+        }
+
+        .add-movie-form.hall-config input[type="number"] {
+            width: 50px;
+            height: 30px;
+            border: 1px solid #d1c4e9; /* 淡紫色边框 */
+            border-radius: 4px;
+            text-align: center;
+            margin: 0 10px;
+            transition: border 0.3s;
+        }
+
+        .add-movie-form.hall-config input[type="number"]:focus {
+            border-color: #9c27b0; /* 聚焦时深紫色边框 */
+            box-shadow: 0 0 0 2px rgba(156, 39, 176, 0.2);
+        }
+
+        /* 添加电影表单美化 */
+        .add-movie-form.movie-add {
+            background: #f8f5fc; 
+            border: 1px solid #e1bee7; 
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 30px;
+            box-shadow: 0 1px 3px rgba(156, 39, 176, 0.08);
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            align-items: center;
+        }
+
+        .add-movie-form.movie-add label {
+            color: #6a1b9a; /* 紫色文字 */
+            font-size: 14px;
+            display: inline-block;
             margin-right: 5px;
+        }
+
+        .add-movie-form.movie-add input[type="text"],
+        .add-movie-form.movie-add input[type="number"] {
+            height: 34px;
+            border: 1px solid #d1c4e9;
+            border-radius: 4px;
+            padding: 0 10px;
+            transition: all 0.3s;
+        }
+
+        .add-movie-form.movie-add input[type="text"]:focus,
+        .add-movie-form.movie-add input[type="number"]:focus {
+            border-color: #9c27b0;
+            box-shadow: 0 0 0 2px rgba(156, 39, 176, 0.2);
+            outline: none;
+        }
+
+        /* 按钮美化（统一紫色系） */
+        .add-movie-form button {
+            background: #ba68c8;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 6px 16px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s;
+            height: 34px;
+        }
+
+        .add-movie-form button:hover {
+            background: #9c27b0;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        .add-movie-form button:active {
+            transform: translateY(0);
+        }
+
+        /* 输入框分组样式 */
+        .add-movie-form .form-group {
+            display: inline-flex;
+            align-items: center;
         }
 
         /* 场次管理按钮样式 */
@@ -183,105 +467,183 @@
             top: 0;
             width: 100vw;
             height: 100vh;
-            background: rgba(0, 0, 0, 0.3);
+            background: rgba(0, 0, 0, 0.2);
             align-items: center;
             justify-content: center;
         }
 
-        /* 弹窗内容样式 */
+        /* 弹窗内容容器样式 */
         .modal-content {
-            background: #fff;
-            padding: 30px 40px;
-            border-radius: 8px;
-            min-width: 400px;
-            box-shadow: 0 2px 12px #888;
+            background: #ffffff;
+            border: 1px solid #ce93d8; /* 紫色边框 */
+            border-radius: 10px; /* 圆角优化 */
+            box-shadow: 0 4px 15px rgba(156, 39, 176, 0.15); /* 紫色阴影 */
+            padding: 25px 30px; /* 内边距调整 */
         }
 
         /* 弹窗标题样式 */
         .modal-content h3 {
-            margin-top: 0;
+            color: #7b1fa2; /* 深紫色标题 */
+            font-size: 18px;
+            margin-bottom: 15px;
+            padding-bottom: 8px;
+            border-bottom: 1px dashed #e1bee7; /* 淡紫色分隔线 */
         }
 
-        /* 弹窗表单标签样式 */
+        /* 弹窗表单元素样式 */
         .modal-content label {
-            margin-right: 5px;
+            color: #6a1b9a; /* 紫色标签文字 */
+            font-size: 14px;
         }
 
-        /* 弹窗表单输入框样式 */
         .modal-content input,
         .modal-content select {
-            margin-bottom: 10px;
+            border: 1px solid #d1c4e9; /* 淡紫色边框 */
+            border-radius: 4px;
+            padding: 5px 10px;
+            margin-right: 10px;
+            height: 30px;
+            transition: all 0.3s;
         }
 
-        /* 场次列表样式 */
+        .modal-content input:focus,
+        .modal-content select:focus {
+            border-color: #9c27b0; /* 聚焦时深紫色边框 */
+            box-shadow: 0 0 0 2px rgba(156, 39, 176, 0.2); /* 紫色聚焦光晕 */
+            outline: none;
+        }
+
+        /* 弹窗按钮样式 */
+        .modal-content button {
+            background: #ba68c8; /* 紫色按钮 */
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 5px 12px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .modal-content button:hover {
+            background: #9c27b0; /* 深紫色 hover 效果 */
+            transform: translateY(-1px);
+        }
+
+        /* 场次列表样式优化 */
         .session-list {
-            margin: 10px 0 0 0;
-            padding: 0;
-            list-style: none;
+            margin: 15px 0;
+            padding-left: 10px;
         }
 
-        /* 场次列表项样式 */
         .session-list li {
-            margin-bottom: 6px;
+            color: #5a189a; /* 紫色文字 */
+            padding: 6px 0;
+            border-bottom: 1px dashed #f3e5f5; /* 淡紫色虚线 */
         }
 
-        /* 场次列表按钮样式 */
         .session-list button {
+            background: #f3e5f5;
+            color: #7b1fa2;
             margin-left: 10px;
+            padding: 2px 8px;
         }
+
+        .session-list button:hover {
+            background: #e1bee7;
+            transform: none;
+        }
+
     </style>
 </head>
 
 <body>
-    <h1>电影选择与场次管理</h1>
-    <hr>
-    <!-- 放映厅配置表单 -->
-    <div class="add-movie-form" style="margin-bottom:18px;background:#fff8e1;">
-        <label style="font-weight:bold;">放映厅数量设置：</label>
-        <label>100人厅</label><input type="number" id="count100" min="1" max="10" style="width:40px;">
-        <label>200人厅</label><input type="number" id="count200" min="1" max="10" style="width:40px;">
-        <label>300人厅</label><input type="number" id="count300" min="1" max="10" style="width:40px;">
-        <button onclick="saveHallCount()">保存</button>
-    </div>
-    <!-- 添加电影表单 -->
-    <div class="add-movie-form">
-        <label>电影名：</label><input type="text" id="movieName" placeholder="如：流浪地球2" style="width:120px;">
-        <label>评分：</label><input type="number" id="movieRating" min="0" max="10" step="0.1" style="width:60px;">
-        <label>图片链接：</label><input type="text" id="movieImg" placeholder="图片URL或images/xxx.png" style="width:180px;">
-        <button onclick="addMovie()">添加电影</button>
-    </div>
-    <div class="container">
-        <!-- 左侧 热门电影区域 -->
-        <div class="movie-section">
-            <h2 style="margin-bottom: 15px;">热门电影</h2>
-            <div class="movie-grid" id="movieGrid"></div>
-            <button class="toggle-btn" onclick="toggleExtra()">展开更多</button>
-        </div>
-        <!-- 右侧 排行榜区域 -->
-        <div class="ranking-section">
-            <h2>今日票房排行</h2>
-            <ul class="ranking-list" id="rankingList"></ul>
-        </div>
-    </div>
-    <!-- 场次管理弹窗 -->
-    <div class="modal" id="sessionModal">
-        <div class="modal-content">
-            <h3>场次管理 - <span id="modalMovieName"></span></h3>
-            <div>
-                <label>日期：</label><input type="date" id="sessionDate">
-                <label>开始：</label><input type="time" id="sessionStart">
-                <label>结束：</label><input type="time" id="sessionEnd">
-                <label>厅规模：</label>
-                <select id="sessionHallSize">
-                    <option value="100">100人</option>
-                    <option value="200">200人</option>
-                    <option value="300">300人</option>
-                </select>
-                <button onclick="addSessionToMovie()">添加场次</button>
+     <!-- 页面头部，包含logo和导航栏 -->
+    <header class="header">
+        <div class="header-inner">
+            <div class="logo-background">
+                <img class="logo-img" src="images/huaqing.png">
             </div>
-            <ul class="session-list" id="sessionList"></ul>
-            <div style="text-align:right;margin-top:10px;">
-                <button onclick="closeSessionModal()">关闭</button>
+            <div class="nav">
+                <div>
+                    <a>首页</a>
+                </div>
+            </div>
+        </div>
+    </header>
+    <!-- 头部占位符，防止内容被固定头部遮挡 -->
+     <div class="header-placeholder"></div>
+    <!-- 主容器 -->
+    <div class="container">
+        <!-- 购票进度条 -->
+        <div class="progress-bar">
+            <div class="step first">
+                <span class="step-num">1</span>
+                <div class="bar"></div>
+                <span class="step-text">选择影片场次</span>
+            </div>
+            <div class="step second">
+                <span class="step-num">2</span>
+                <div class="bar"></div>
+                <span class="step-text">选择座位</span>
+            </div>
+            <div class="step third">
+                <span class="step-num">3</span>
+                <div class="bar"></div>
+                <span class="step-text">完成</span>
+            </div>
+        </div>
+
+        <div class="box">
+            <!-- 左侧 热门电影区域 -->
+            <div class="movie-section">
+                <h2 style="margin-bottom: 15px;">热门电影</h2>
+                <div class="movie-grid" id="movieGrid"></div>
+                <button class="toggle-btn" onclick="toggleExtra()">展开更多</button>
+            </div>
+            <!-- 右侧 排行榜区域 -->
+            <div class="ranking-section">
+                <h2>今日票房排行</h2>
+                <ul class="ranking-list" id="rankingList"></ul>
+            </div>
+        </div>
+        <!-- 放映厅配置表单 -->
+        <div class="add-movie-form hall-config">
+            <label style="font-weight:bold;">放映厅数量设置：</label>
+            <label>100人厅</label><input type="number" id="count100" min="1" max="10" style="width:40px;">
+            <label>200人厅</label><input type="number" id="count200" min="1" max="10" style="width:40px;">
+            <label>300人厅</label><input type="number" id="count300" min="1" max="10" style="width:40px;">
+            <button onclick="saveHallCount()">保存</button>
+        </div>
+        <!-- 添加电影表单 -->
+        <div class="add-movie-form movie-add">
+            <label>电影名：</label><input type="text" id="movieName" placeholder="如：流浪地球2" style="width:120px;">
+            <label>评分：</label><input type="number" id="movieRating" min="0" max="10" step="0.1" style="width:60px;">
+            <label>票价：</label><input type="number" id="moviePrice" min="0" max="100" step="0.1" style="width:60px;">
+            <label>图片链接：</label><input type="text" id="movieImg" placeholder="图片URL或images/xxx.png" style="width:180px;">
+            <button onclick="addMovie()">添加电影</button>
+        </div>
+       
+        <!-- 场次管理弹窗 -->
+        <div class="modal" id="sessionModal">
+            <div class="modal-content">
+                <h3>场次管理 - <span id="modalMovieName"></span></h3>
+                <div>
+                    <label>日期：</label><input type="date" id="sessionDate">
+                    <label>开始：</label><input type="time" id="sessionStart">
+                    <label>结束：</label><input type="time" id="sessionEnd">
+                    <label>厅规模：</label>
+                    <select id="sessionHallSize">
+                        <option value="100">100人</option>
+                        <option value="200">200人</option>
+                        <option value="300">300人</option>
+                    </select>
+                    <button onclick="addSessionToMovie()">添加场次</button>
+                </div>
+                <ul class="session-list" id="sessionList"></ul>
+                <div style="text-align:right;margin-top:10px;">
+                    <button onclick="closeSessionModal()">关闭</button>
+                </div>
             </div>
         </div>
     </div>
@@ -311,14 +673,16 @@
         function addMovie() {
             const name = document.getElementById('movieName').value.trim();
             const rating = parseFloat(document.getElementById('movieRating').value) || '';
+            const price = parseFloat(document.getElementById('moviePrice').value) || '';
             const img = document.getElementById('movieImg').value.trim();
             if (!name) { alert('请输入电影名'); return; }
             let movies = getAllMovies();
             if (movies.find(m => m.name === name)) { alert('该电影已存在'); return; }
-            movies.push({ name, rating, img, sessions: [] });
+            movies.push({ name, rating, price, img, sessions: [] });
             setAllMovies(movies);
             document.getElementById('movieName').value = '';
             document.getElementById('movieRating').value = '';
+            document.getElementById('moviePrice').value = '';
             document.getElementById('movieImg').value = '';
             renderMovies();
         }
@@ -338,7 +702,7 @@
             <img src="${m.img || 'images/movie' + ((idx % 12) + 1) + '.png'}" alt="${m.name}">
             <div class="title">${m.name}</div>
             <div class="rating">${m.rating ? m.rating : '--'}</div>
-            <div class="buy-btn">购票</div>
+            <div class="buy-btn">购票<span class="price">  ￥${m.price ? m.price : '--'}</span></div>
             <button class="session-btn" onclick="event.stopPropagation();openSessionModal('${m.name}')">场次管理</button>
             <button class="delete-btn" style="position:absolute;left:10px;top:10px;background:#f55;color:#fff;border:none;border-radius:4px;padding:2px 8px;font-size:12px;cursor:pointer;" onclick="event.stopPropagation();deleteMovie('${m.name}')">删除</button>
         `;

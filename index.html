@@ -262,8 +262,14 @@
             border: 1px solid #888;
         }
 
-        #cinema-canvas {
+        .legend-box2 {
+            width: 20px;
+            height: 20px;
+            display: inline-block;
+            border: 1px dashed red;
+        }
 
+        #cinema-canvas {
             display: block;
             margin: 12px auto;
         }
@@ -327,12 +333,16 @@
             padding-right: 3px;
             font-size: 17px;
             border-radius: 2px;
-            transition: transform 0.2s ease;
+            transition: all 0.2s ease;
         }
 
         button:hover {
-            transform: scale(1.05);
+            background-color: #bf3ee7;
+            color: white;
+            transform: scale(1.03);
             cursor: pointer;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+            border-color: #a535c9;
         }
 
         .nothing {
@@ -403,6 +413,8 @@
                 <span><span class="legend-box" style="background:yellow;"></span>选中未售</span>
                 <span><span class="legend-box" style="background:red;"></span>已售</span>
                 <span><span class="legend-box" style="background:orange;"></span>预订</span>
+                <span><span class="legend-box2"
+                        style="background:rgb(230, 230, 230);margin-left: 700px;"></span>最佳观影区</span>
             </div>
             <!-- 影院座位画布 -->
             <canvas id="cinema-canvas"></canvas>
@@ -474,6 +486,21 @@
         canvas.height = 800;
 
         // 座位状态数组：0-空座，1-已售，2-选中，3-预订
+        // 定义最佳观影区范围（排和列）
+        // 100人厅：rows 3~6, cols 2~7
+        // 200/300人厅：rows 3~6, cols 5~14
+        function isBestViewSeat(row, col) {
+            if (currentHall == 100) {
+                // 行数靠近荧幕一侧增加一行（原3~6，现2~6），列数不变
+                return row >= 2 && row <= 6 && col >= 2 && col <= 7;
+            } else if (currentHall == 200) {
+                // 行数靠近荧幕一侧增加一列（原3~6，现2~6），列数左右各增加一列（原5~14，现4~15）
+                return row >= 2 && row <= 6 && col >= 4 && col <= 15;
+            } else {
+                // 300人厅保持原样
+                return row >= 3 && row <= 6 && col >= 5 && col <= 14;
+            }
+        }
         let seats = Array.from({ length: ROWS }, (_, r) => Array.from({ length: COLS }, (_, c) => ({
             status: 0, // 0空 1已售 2选中 3预订
             row: r, col: c,
@@ -541,7 +568,24 @@
                 ctx.moveTo(endX1, endY1 - 2);
                 ctx.lineTo(endX2, endY2);
                 ctx.stroke();
+                // 最佳观影区
+                ctx.save();
 
+                ctx.fillStyle = 'rgb(230, 230, 230)';
+                ctx.strokeStyle = 'red';
+                ctx.setLineDash([5, 5]);
+                ctx.lineWidth = 2;
+
+                ctx.beginPath();
+                const arcAngle = startAngle - endAngle;
+                ctx.arc(centerX1, centerY1, 3840, startAngle - arcAngle * 0.2, endAngle + arcAngle * 0.2);
+                ctx.arc(centerX1, centerY1, 3560, endAngle + arcAngle * 0.2, startAngle - arcAngle * 0.2, true);
+                ctx.lineTo(288, 272);
+
+                ctx.stroke();
+                ctx.fill();
+
+                ctx.restore();
             } else if (COLS == 10) {// 100人厅
                 canvas.width = 800;
                 canvas.height = 550;
@@ -574,6 +618,24 @@
                 ctx.moveTo(672, 20);
                 ctx.lineTo(643, 439);
                 ctx.stroke();
+                // 最佳观影区
+                ctx.save();
+
+                ctx.fillStyle = 'rgb(230, 230, 230)';
+                ctx.strokeStyle = 'red';
+                ctx.setLineDash([5, 5]);
+                ctx.lineWidth = 2;
+
+                ctx.beginPath();
+                const arcAngle = startAngle - endAngle;
+                ctx.arc(centerX1, centerY1, 3750, startAngle - arcAngle * 0.2, endAngle + arcAngle * 0.2);
+                ctx.arc(centerX1, centerY1, 3550, endAngle + arcAngle * 0.2, startAngle - arcAngle * 0.2, true);
+                ctx.lineTo(238, 143);
+
+                ctx.stroke();
+                ctx.fill();
+
+                ctx.restore();
             } else if (COLS == 20) {// 200人厅
                 canvas.width = 1200;
                 canvas.height = 590;
@@ -606,6 +668,24 @@
                 ctx.moveTo(endX1 - 1, endY1 + 6);
                 ctx.lineTo(endX2, endY2);
                 ctx.stroke();
+                // 最佳观影区
+                ctx.save();
+
+                ctx.fillStyle = 'rgb(230, 230, 230)';
+                ctx.strokeStyle = 'red';
+                ctx.setLineDash([5, 5]);
+                ctx.lineWidth = 2;
+
+                ctx.beginPath();
+                const arcAngle = startAngle - endAngle;
+                ctx.arc(centerX1, centerY1, 3960, startAngle - arcAngle * 0.205, endAngle + arcAngle * 0.205);
+                ctx.arc(centerX1, centerY1, 3760, endAngle + arcAngle * 0.205, startAngle - arcAngle * 0.205, true);
+                ctx.lineTo(299, 152);
+
+                ctx.stroke();
+                ctx.fill();
+
+                ctx.restore();
             }
 
             const centerX = canvas.width / 2;
@@ -684,7 +764,7 @@
                 canvas.height = 550;
             } else if (currentHall == 200) {
                 canvas.width = 1200;
-                canvas.height = 800;
+                canvas.height = 590;
             } else if (currentHall == 300) {
                 canvas.width = 1200;
                 canvas.height = 800;
@@ -706,28 +786,37 @@
                     // 判断点击是否在座位圆圈内
                     if (dx * dx + dy * dy <= SEAT_RADIUS * SEAT_RADIUS) {
                         if (seat.status === 1) return; // 已售不能选
-                        if (seat.status === 0) {
-                            // 空座 -> 选中
-                            seat.status = 2;
-                            selected.push(seat);
-                        } else if (seat.status === 2) {
-                            // 选中 -> 空座
-                            seat.status = 0;
-                            selected = selected.filter(s => !(s.row === r && s.col === c));
-                        } else if (seat.status === 3) {
-                            // 预订座位允许选中（按住Ctrl可多选）
-                            if (event.ctrlKey) {
+                        if (event.ctrlKey) {
+                            // Ctrl多选逻辑
+                            if (seat.status === 0) {
                                 seat.status = 2;
                                 selected.push(seat);
-                            } else {
-                                // 单击则清空其他选中，只选中当前
-                                seats.forEach(row => row.forEach(s => { if (s.status === 2) s.status = 0; }));
-                                selected = [];
+                            } else if (seat.status === 2) {
+                                seat.status = 0;
+                                selected = selected.filter(s => !(s.row === r && s.col === c));
+                            } else if (seat.status === 3) {
                                 seat.status = 2;
                                 selected.push(seat);
                             }
+                        } else {
+                            // 默认单选逻辑：清空所有选中，只选当前
+                            seats.forEach(row => row.forEach(s => { if (s.status === 2) s.status = 0; }));
+                            selected = [];
+                            if (seat.status === 0 || seat.status === 3) {
+                                seat.status = 2;
+                                selected.push(seat);
+                            } else if (seat.status === 2) {
+                                seat.status = 0;
+                            }
                         }
                         drawSeats(); // 重新绘制以更新状态
+                        // 手动选座后立即校验年龄规则
+                        if (!checkSelectionAgeRule()) {
+                            alert('不符合年龄规则');
+                            selected.forEach(seat => { if (seat.status === 2) seat.status = 0; });
+                            selected = [];
+                            drawSeats();
+                        }
                         return;
                     }
                 }
@@ -777,16 +866,19 @@
             if (age < 15) validRows = Array.from({ length: ROWS - 3 }, (_, i) => i + 3); // 15岁以下，后排
             else if (age > 60) validRows = Array.from({ length: ROWS - 3 }, (_, i) => i); // 60岁以上，前排
             else validRows = Array.from({ length: ROWS }, (_, i) => i); // 其他，所有排
-            // 收集所有可选空座
-            let candidates = [];
+            // 收集所有可选空座，优先最佳观影区
+            let bestCandidates = [];
+            let otherCandidates = [];
             for (let r of validRows) {
                 for (let c = 0; c < COLS; c++) {
                     let seat = seats[r][c];
                     if (seat.status === 0) {
-                        candidates.push(seat);
+                        if (isBestViewSeat(r, c)) bestCandidates.push(seat);
+                        else otherCandidates.push(seat);
                     }
                 }
             }
+            let candidates = bestCandidates.length > 0 ? bestCandidates : otherCandidates;
             if (candidates.length === 0) {
                 alert('没有可用座位！');
                 return;
@@ -811,34 +903,101 @@
             if (names.length !== count || ages.length !== count) { alert('团体人数、姓名、年龄数不符'); return; }
             if (!checkAvailableSeatsForOperation(count)) return;
             let minAge = Math.min(...ages), maxAge = Math.max(...ages);
-            // 根据年龄规则确定可选排数
+            // 新规则：有60岁以上不能最后3排，有15岁以下不能前3排，二者都有只能中间排
             let validRows = [];
-            if (minAge < 15) validRows = Array.from({ length: ROWS - 3 }, (_, i) => i + 3);
-            else if (maxAge > 60) validRows = Array.from({ length: ROWS - 3 }, (_, i) => i);
-            else validRows = Array.from({ length: ROWS }, (_, i) => i);
-            // 收集所有可选的连续团体座位组
-            let groupCandidates = [];
-            for (let r of validRows) {
-                for (let c = 0; c <= COLS - count; c++) {
-                    let group = seats[r].slice(c, c + count);
-                    if (group.every(seat => seat.status === 0)) {
-                        groupCandidates.push({ row: r, start: c, group });
+            let hasOld = maxAge > 60;
+            let hasYoung = minAge < 15;
+            if (hasOld && hasYoung) {
+                // 只能中间排
+                validRows = Array.from({ length: ROWS - 6 }, (_, i) => i + 3);
+            } else if (hasOld) {
+                // 不能最后3排
+                validRows = Array.from({ length: ROWS - 3 }, (_, i) => i);
+            } else if (hasYoung) {
+                // 不能前3排
+                validRows = Array.from({ length: ROWS - 3 }, (_, i) => i + 3);
+            } else {
+                validRows = Array.from({ length: ROWS }, (_, i) => i);
+            }
+            seats.forEach(row => row.forEach(s => { if (s.status === 2) s.status = 0; }));
+            let selectedSeats = [];
+            if (count <= COLS) {
+                // 一排能坐下，优先同排连坐，优先最佳观影区
+                let bestGroupCandidates = [];
+                let otherGroupCandidates = [];
+                for (let r of validRows) {
+                    for (let c = 0; c <= COLS - count; c++) {
+                        let group = seats[r].slice(c, c + count);
+                        if (group.every(seat => seat.status === 0)) {
+                            // 判断该组是否全部在最佳观影区
+                            if (group.every(seat => isBestViewSeat(seat.row, seat.col))) {
+                                bestGroupCandidates.push({ row: r, start: c, group });
+                            } else {
+                                otherGroupCandidates.push({ row: r, start: c, group });
+                            }
+                        }
                     }
                 }
+                let groupCandidates = bestGroupCandidates.length > 0 ? bestGroupCandidates : otherGroupCandidates;
+                if (groupCandidates.length === 0) {
+                    alert('没有可用的团体座位！');
+                    return;
+                }
+                // 优先推荐最佳观影区内连座最多的方案
+                // 若有多个方案，优先连座数多的
+                let maxLen = count;
+                let bestGroups = groupCandidates.filter(g => g.group.length === maxLen);
+                let idx = Math.floor(Math.random() * bestGroups.length);
+                let { group } = bestGroups[idx];
+                selectedSeats = group;
+            } else {
+                // 多排连坐，优先相邻排，优先最佳观影区
+                let rowsNeeded = Math.ceil(count / COLS);
+                let found = false;
+                let bestSeatsGroup = null, bestCount = 0;
+                for (let i = 0; i <= validRows.length - rowsNeeded; i++) {
+                    let rowsGroup = validRows.slice(i, i + rowsNeeded);
+                    let allRowsAvailable = true;
+                    let seatsGroup = [];
+                    let left = count;
+                    let bestViewCount = 0;
+                    for (let r of rowsGroup) {
+                        let rowSeats = seats[r].filter(seat => seat.status === 0);
+                        let take = Math.min(left, COLS);
+                        if (rowSeats.length < take) {
+                            allRowsAvailable = false;
+                            break;
+                        }
+                        // 优先最佳观影区
+                        let bestRowSeats = rowSeats.filter(seat => isBestViewSeat(seat.row, seat.col));
+                        if (bestRowSeats.length >= take) {
+                            seatsGroup = seatsGroup.concat(bestRowSeats.slice(0, take));
+                            bestViewCount += take;
+                        } else {
+                            seatsGroup = seatsGroup.concat(rowSeats.slice(0, take));
+                            bestViewCount += bestRowSeats.length;
+                        }
+                        left -= take;
+                    }
+                    if (allRowsAvailable && seatsGroup.length === count) {
+                        if (bestViewCount > bestCount) {
+                            bestSeatsGroup = seatsGroup;
+                            bestCount = bestViewCount;
+                            found = true;
+                        }
+                    }
+                }
+                if (!found || !bestSeatsGroup) {
+                    alert('没有可用的团体座位！');
+                    return;
+                }
+                selectedSeats = bestSeatsGroup;
             }
-            if (groupCandidates.length === 0) {
-                alert('没有可用的团体座位！');
-                return;
-            }
-            // 随机选一个组
-            let idx = Math.floor(Math.random() * groupCandidates.length);
-            let { row, start, group } = groupCandidates[idx];
-            seats.forEach(row => row.forEach(s => { if (s.status === 2) s.status = 0; }));
-            selected = group;
+            selected = selectedSeats;
             for (let i = 0; i < count; i++) {
-                group[i].status = 2;
-                group[i].name = names[i];
-                group[i].age = ages[i];
+                selected[i].status = 2;
+                selected[i].name = names[i];
+                selected[i].age = ages[i];
             }
             drawSeats();
         }
@@ -1449,7 +1608,7 @@
                 canvas.height = 550;
             } else if (currentHall == 200) {
                 canvas.width = 1200;
-                canvas.height = 800;
+                canvas.height = 590;
             } else if (currentHall == 300) {
                 canvas.width = 1200;
                 canvas.height = 800;
