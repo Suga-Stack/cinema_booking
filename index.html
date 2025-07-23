@@ -491,14 +491,11 @@
         // 200/300人厅：rows 3~6, cols 5~14
         function isBestViewSeat(row, col) {
             if (currentHall == 100) {
-                // 行数靠近荧幕一侧增加一行（原3~6，现2~6），列数不变
                 return row >= 2 && row <= 6 && col >= 2 && col <= 7;
             } else if (currentHall == 200) {
-                // 行数靠近荧幕一侧增加一列（原3~6，现2~6），列数左右各增加一列（原5~14，现4~15）
                 return row >= 2 && row <= 6 && col >= 4 && col <= 15;
             } else {
-                // 300人厅保持原样
-                return row >= 3 && row <= 6 && col >= 5 && col <= 14;
+                return row >= 2 && row <= 8 && col >= 4 && col <= 15;
             }
         }
         let seats = Array.from({ length: ROWS }, (_, r) => Array.from({ length: COLS }, (_, c) => ({
